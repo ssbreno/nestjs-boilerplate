@@ -42,7 +42,7 @@ export const setupSwagger = (app: INestApplication) => {
 /**
  * Bootstrap the app.
  */
-async function bootstrap() {
+export async function bootstrap() {
   const logger = new Logger('Bootstrap')
 
   const fastifyAdapter = new FastifyAdapter({
@@ -97,4 +97,8 @@ async function bootstrap() {
   logger.log(`Application is running on: ${await app.getUrl()}`)
 }
 
-bootstrap()
+bootstrap().catch(error => {
+  const logger = new Logger('Bootstrap')
+  logger.error('Error during application bootstrap:', error)
+  process.exit(1)
+})

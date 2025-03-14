@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { ValidationError } from 'class-validator'
-import { getErrorCode, getErrorMessage } from './error.utils'
+import { getErrorCode, getErrorMessage } from '../../../src/common/filters/error.utils'
 
 describe('ErrorUtils', () => {
   it('should get error code', () => {

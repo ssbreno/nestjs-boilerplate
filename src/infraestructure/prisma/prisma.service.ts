@@ -1,8 +1,9 @@
-import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common'
+/* eslint-disable @typescript-eslint/no-floating-promises */
+import { INestApplication, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { PrismaClient } from '@prisma/client'
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     super({
       datasources: {
@@ -14,13 +15,26 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     })
   }
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     await this.$connect()
   }
 
-  async enableShutdownHooks(app: INestApplication) {
-    process.on('beforeExit', () => {
-      app.close()
+  async onModuleDestroy(): Promise<void> {
+    await this.$disconnect()
+  }
+
+  async enableShutdownHooks(app: INestApplication): Promise<void> {
+    process.on('beforeExit', async () => {
+      await app.close()
     })
+  }
+
+  async cleanDatabase(): Promise<void> {
+    // Add the models you want to clean in the correct order (respecting foreign key constraints)
+    const models = ['User', 'Worker']
+
+    for (const model of models) {
+      await this.$executeRawUnsafe(`TRUNCATE TABLE "${model}" CASCADE;`)
+    }
   }
 }

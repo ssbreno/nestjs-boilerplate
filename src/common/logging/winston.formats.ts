@@ -83,7 +83,7 @@ function isObject(value: unknown): value is object {
 export const severity = format((info: WinstonInfo) => {
   const { level } = info
   const levels = info.levels || NPM_LEVEL_NAME_TO_CODE
-  const levelCode = levels[level] as number
+  const levelCode = levels[level]
   const stackDriverLevel = STACK_DRIVER_LOGGING_LEVEL_CODE_TO_NAME[levelCode] || 'info'
 
   return {
@@ -96,7 +96,7 @@ export const severityWithOptions = (options: FormatOptions = {}) =>
   format((info: WinstonInfo) => {
     const { level } = info
     const levels = info.levels || NPM_LEVEL_NAME_TO_CODE
-    const levelCode = levels[level] as number
+    const levelCode = levels[level]
     const stackDriverLevel = STACK_DRIVER_LOGGING_LEVEL_CODE_TO_NAME[levelCode] || 'info'
 
     return {

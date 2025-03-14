@@ -1,4 +1,4 @@
-import { ErrorResponseDto } from './error-response.dto'
+import { ErrorResponseDto } from '../../../src/common/filters/error-response.dto'
 
 describe('ErrorResponseDto', () => {
   afterEach(() => {

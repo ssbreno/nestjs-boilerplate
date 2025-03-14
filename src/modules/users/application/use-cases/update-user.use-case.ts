@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, Inject } from '@nestjs/common'
 import { BaseUseCase } from '../../../../core/domain/base.use-case'
 import { IUserRepository } from '../../domain/repositories/user.repository.interface'
 import { UserEntity } from '../../domain/entities/user.entity'
@@ -13,7 +13,7 @@ interface UpdateUserInput {
 
 @Injectable()
 export class UpdateUserUseCase implements BaseUseCase<UpdateUserInput, UserEntity> {
-  constructor(private readonly userRepository: IUserRepository) {}
+  constructor(@Inject('IUserRepository') private readonly userRepository: IUserRepository) {}
 
   async execute({ id, data }: UpdateUserInput): Promise<UserEntity> {
     const user = await this.userRepository.findById(id)

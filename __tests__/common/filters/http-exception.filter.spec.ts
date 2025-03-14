@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { HttpExceptionFilter } from './http-exception.filter'
+import { HttpExceptionFilter } from '../../../src/common/filters/http-exception.filter'
 
 const mockLogger = {
   info: jest.fn(),
@@ -79,6 +79,8 @@ describe('System header validation service', () => {
         code: expect.anything(),
         statusCode: 404,
         timestamp: expect.anything(),
+        path: '/api/v1/users/00000',
+        metadata: undefined,
       })
     })
 
@@ -95,6 +97,8 @@ describe('System header validation service', () => {
         statusCode: 400,
         code: 'UNKNOWN',
         timestamp: expect.anything(),
+        path: '/api/v1/users/00000',
+        metadata: undefined,
       })
     })
 
@@ -106,6 +110,8 @@ describe('System header validation service', () => {
         statusCode: 409,
         code: expect.anything(),
         timestamp: expect.anything(),
+        path: '/api/v1/users/00000',
+        metadata: undefined,
       })
     })
 
@@ -117,6 +123,8 @@ describe('System header validation service', () => {
         statusCode: 500,
         code: expect.anything(),
         timestamp: expect.anything(),
+        path: '/api/v1/users/00000',
+        metadata: undefined,
       })
     })
 
@@ -126,13 +134,14 @@ describe('System header validation service', () => {
       filter.catch(error, mockArgumentsHost)
       expect(mockStatus).toBeCalledWith(HttpStatus.PAYLOAD_TOO_LARGE)
       expect(mockJson).toBeCalledWith({
-        message: `
-        Your request entity size is too big for the server to process it:
-          - request size: ${error.length};
-          - request limit: ${error.limit}.`,
+        message: `Your request entity size is too big for the server to process it:
+           - request size: ${error.length};
+           - request limit: ${error.limit}.`,
         statusCode: 413,
         code: expect.anything(),
         timestamp: expect.anything(),
+        path: '/api/v1/users/00000',
+        metadata: undefined,
       })
     })
   })
