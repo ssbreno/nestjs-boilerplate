@@ -1,6 +1,7 @@
 import { LoggerService } from '@nestjs/common'
 import * as winston from 'winston'
-import { nestConsoleFormat, severity } from './winston.formats'
+
+import { severity } from './winston.formats'
 
 export interface LoggerOptions {
   level?: string
@@ -25,7 +26,6 @@ export class WinstonLogger implements LoggerService {
           winston.format.timestamp(),
           winston.format.ms(),
           severity({ upperCase: true }),
-          nestConsoleFormat(),
         ),
       transports: options?.transports || [new winston.transports.Console()],
     })

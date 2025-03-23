@@ -2,7 +2,6 @@ import {
   CallHandler,
   ExecutionContext,
   HttpException,
-  HttpStatus,
   Injectable,
   Logger,
   NestInterceptor,
@@ -11,6 +10,7 @@ import { Reflector } from '@nestjs/core'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
+
 import { IGNORE_LOGGING_INTERCEPTOR } from './logging.constants'
 
 /**
@@ -98,7 +98,7 @@ export class LoggingInterceptor implements NestInterceptor {
       const ctx = `${this.ctxPrefix} - ${statusCode} - ${method} - ${url}`
       const message = `Outgoing response - ${statusCode} - ${method} - ${url}`
 
-      if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      if (statusCode >= 500) {
         this.logger.error(
           {
             method,

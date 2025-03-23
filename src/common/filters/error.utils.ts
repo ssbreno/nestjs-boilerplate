@@ -37,36 +37,36 @@ export function getErrorCode(exception: ExceptionResponse | string): string {
  *
  * @param exception
  */
-export function getErrorMessage(
-  exception: ExceptionResponse | string | any,
-): string | Array<string> {
+export function getErrorMessage(exception: ExceptionResponse | string): string | Array<string> {
   if (typeof exception === 'string') {
     return exception
   }
 
-  if (typeof exception.message === 'string') {
-    return exception.message
+  const exceptionObj = exception
+
+  if (typeof exceptionObj?.message === 'string') {
+    return exceptionObj.message
   }
 
   // Check if the message is an array of strings
   if (
-    Array.isArray(exception.message) &&
-    exception.message.every((msg: any) => typeof msg === 'string')
+    Array.isArray(exceptionObj?.message) &&
+    exceptionObj.message.every(msg => typeof msg === 'string')
   ) {
-    return exception.message
+    return exceptionObj.message
   }
 
-  // Handle case where message is an array of ValidationError objects
-  if (Array.isArray(exception.message)) {
-    const error: ValidationError | string = exception.message[0]
+  // Handle case where message is an array
+  if (Array.isArray(exceptionObj?.message)) {
+    const firstError = exceptionObj.message[0]
 
-    if (typeof error === 'string') {
-      return error
+    if (typeof firstError === 'string') {
+      return firstError
     }
 
-    const validationError: string = parseErrorMessage(error)
-    if (validationError) {
-      return validationError
+    // Handle ValidationError objects
+    if ('constraints' in firstError || 'children' in firstError) {
+      return parseErrorMessage(firstError as ValidationError)
     }
   }
 
@@ -88,18 +88,14 @@ function formatErrorCode(error: string): string {
  * @param error
  */
 function parseErrorMessage(error: ValidationError): string {
-  let message = ''
-  const messages: Constraint | undefined = findConstraints(error)
+  const constraints = findConstraints(error)
 
-  if (messages === undefined) {
+  if (!constraints) {
     return 'Invalid parameter'
   }
 
-  Object.keys(messages).forEach((key: string): void => {
-    message += `${message === '' ? '' : ' -- '}${messages[key]}`
-  })
-
-  return message
+  // Concatenate all constraint messages
+  return Object.values(constraints).join(' -- ')
 }
 
 /**
@@ -108,12 +104,22 @@ function parseErrorMessage(error: ValidationError): string {
  * @param error
  */
 function findConstraints(error: ValidationError): Constraint | undefined {
-  let objectToIterate: ValidationError = error
-  while (objectToIterate.children !== undefined && objectToIterate.children.length > 0) {
-    objectToIterate = objectToIterate.children[0]
+  // If there are constraints at this level, return them
+  if (error.constraints) {
+    return error.constraints
   }
 
-  return objectToIterate.constraints
+  // If there are children, recursively check them
+  if (error.children && error.children.length > 0) {
+    for (const child of error.children) {
+      const constraints = findConstraints(child)
+      if (constraints) {
+        return constraints
+      }
+    }
+  }
+
+  return undefined
 }
 
 /**

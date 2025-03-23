@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import * as clc from 'cli-color'
 import { format } from 'winston'
 import * as winston from 'winston'
@@ -21,17 +20,9 @@ interface WinstonInfo extends winston.Logform.TransformableInfo {
   [key: string]: unknown
 }
 
-type StackDriverLevel = {
-  [key: number]:
-    | 'emergency'
-    | 'alert'
-    | 'critical'
-    | 'error'
-    | 'warning'
-    | 'notice'
-    | 'info'
-    | 'debug'
-}
+// Using enum-like object for mapping level codes to names
+type LogLevelCode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+type StackDriverLevel = Record<LogLevelCode, string>
 
 // Map of npm output levels to Stackdriver Logging levels.
 const NPM_LEVEL_NAME_TO_CODE: LogLevel = {
@@ -44,6 +35,7 @@ const NPM_LEVEL_NAME_TO_CODE: LogLevel = {
 }
 
 // Map of Stackdriver Logging levels.
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const STACK_DRIVER_LOGGING_LEVEL_CODE_TO_NAME: StackDriverLevel = {
   0: 'emergency',
   1: 'alert',
@@ -80,11 +72,14 @@ function isObject(value: unknown): value is object {
   return value != null && (type === 'object' || type === 'function')
 }
 
-export const severity = format((info: WinstonInfo) => {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+export const severity = format((info: WinstonInfo): WinstonInfo => {
   const { level } = info
   const levels = info.levels || NPM_LEVEL_NAME_TO_CODE
-  const levelCode = levels[level]
-  const stackDriverLevel = STACK_DRIVER_LOGGING_LEVEL_CODE_TO_NAME[levelCode] || 'info'
+  const levelCode = levels[level] || 6 // Default to info
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const stackDriverLevel =
+    STACK_DRIVER_LOGGING_LEVEL_CODE_TO_NAME[levelCode as LogLevelCode] || 'info'
 
   return {
     ...info,
@@ -92,12 +87,15 @@ export const severity = format((info: WinstonInfo) => {
   }
 })
 
-export const severityWithOptions = (options: FormatOptions = {}) =>
-  format((info: WinstonInfo) => {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+export const severityWithOptions = (options: FormatOptions = {}): any =>
+  format((info: WinstonInfo): WinstonInfo => {
     const { level } = info
     const levels = info.levels || NPM_LEVEL_NAME_TO_CODE
-    const levelCode = levels[level]
-    const stackDriverLevel = STACK_DRIVER_LOGGING_LEVEL_CODE_TO_NAME[levelCode] || 'info'
+    const levelCode = levels[level] || 6 // Default to info
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const stackDriverLevel =
+      STACK_DRIVER_LOGGING_LEVEL_CODE_TO_NAME[levelCode as LogLevelCode] || 'info'
 
     return {
       ...info,
@@ -105,8 +103,12 @@ export const severityWithOptions = (options: FormatOptions = {}) =>
     }
   })
 
-export const nestConsoleFormat = (appName = 'NestWinston') =>
-  format.printf(({ context, level, timestamp, message, ms, ...meta }: WinstonInfo) => {
+// Make sure this returns a proper Winston Format
+export const nestConsoleFormat = (appName = 'NestWinston'): winston.Logform.Format => {
+  // The format function returns FormatWrap but we need Format
+  // We need to cast it to the expected type
+  return format((info: WinstonInfo) => {
+    const { context, level, timestamp, message, ms, ...meta } = info
     const color = NEST_COLOR_SCHEME[level] || ((text: string): string => text)
     const levelMessage = color(`[${appName}] ${level.toUpperCase()} - `)
 
@@ -120,9 +122,15 @@ export const nestConsoleFormat = (appName = 'NestWinston') =>
       ? color(JSON.stringify(message))
       : color(String(message))
 
-    const timestampDiff = clc.yellow(ms || '')
+    const timestampDiff = ms ? clc.yellow(ms) : ''
 
     const metaMessage = Object.keys(meta).length > 0 ? color(JSON.stringify(meta, null, 2)) : ''
 
-    return `${levelMessage}${timestampMessage} ${contextMessage}${outputMessage} ${timestampDiff} ${metaMessage}`.trim()
-  })
+    const formattedMessage =
+      `${levelMessage}${timestampMessage} ${contextMessage}${outputMessage}${timestampDiff ? ' ' + timestampDiff : ''}${metaMessage ? ' ' + metaMessage : ''}`.trim()
+
+    info.message = formattedMessage
+
+    return info
+  })() as winston.Logform.Format // Add a function call and cast the result to the expected type
+}
